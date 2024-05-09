@@ -3,6 +3,7 @@
 import sys
 import os
 import re
+import hashlib
 
 
 args = sys.argv
@@ -11,6 +12,39 @@ args = sys.argv
 def printerr(*arg, **kwargs):
     """Print to stderr"""
     print(*arg, file=sys.stderr, **kwargs)
+
+
+def md5_hash(text):
+    """
+    Convert to MD5 hash.
+    """
+    return hashlib.md5(text.encode()).hexdigest()
+
+
+def remove_all_c(text):
+    """
+    Remove all 'c' (case-insensitive)
+    """
+    return re.sub(r"[cC]", "", text)
+
+
+def parse_special_syntax(line):
+    """
+    Handle special syntax conversions:
+    - [[text]] -> MD5 hash of text
+    - ((text)) -> text with all 'c' removed
+    """
+    # Convert [[text]] to MD5
+    line = re.sub(
+        r"\[\[(.*?)\]\]", lambda m: md5_hash(m.group(1)), line
+    )
+
+    # Convert ((text)) to text with all 'c' removed
+    line = re.sub(
+        r"\(\((.*?)\)\)", lambda m: remove_all_c(m.group(1)), line
+    )
+
+    return line
 
 
 def parse_bold_and_italic(line):
@@ -27,6 +61,7 @@ def parse_bold_and_italic(line):
 
 def parse_headline(line):
     """Parse headline"""
+    line = parse_special_syntax(line)
     heading_match = re.match(r"^(#{1,6})\s+(.*)$", line)
     if heading_match:
         level = len(heading_match.group(1))
@@ -45,6 +80,7 @@ def parse_unordered_list(lines):
     line_count = 0
 
     for line in lines:
+        line = parse_special_syntax(line)
         unordered_list_match = re.match(r"^\-\s+(.*)$", line)
         if unordered_list_match:
             # content = unordered_list_match.group(1)
@@ -69,6 +105,7 @@ def parse_ordered_list(lines):
     line_count = 0
 
     for line in lines:
+        line = parse_special_syntax(line)
         ordered_list_match = re.match(r"^\*\s+(.*)$", line)
         if ordered_list_match:
             # content = ordered_list_match.group(1)
@@ -96,8 +133,10 @@ def parse_paragraph(lines):
         stripped_line = line.rstrip()
         if stripped_line == "":  # End of paragraph
             break
-        content = parse_bold_and_italic(line.strip())
-        paragraph_lines.append(content)
+        # content = parse_bold_and_italic(line.strip())
+        content = parse_special_syntax(line.strip())
+        # paragraph_lines.append(content)
+        paragraph_lines.append(parse_bold_and_italic(content))
         line_count += 1
 
     if paragraph_lines:
@@ -147,7 +186,10 @@ def markdown_to_html(md_lines):
             continue
 
         # lines.append(line)
-        lines.append(parse_bold_and_italic(line))
+        # lines.append(parse_bold_and_italic(line))
+        lines.append(
+            parse_bold_and_italic(parse_special_syntax(line))
+        )
         i += 1
 
     return lines
