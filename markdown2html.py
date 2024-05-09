@@ -13,12 +13,25 @@ def printerr(*arg, **kwargs):
     print(*arg, file=sys.stderr, **kwargs)
 
 
+def parse_bold_and_italic(line):
+    """
+    Convert Markdown bold and italic to HTML.
+    """
+
+    line = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", line)
+
+    line = re.sub(r"__(.*?)__", r"<em>\1</em>", line)
+
+    return line
+
+
 def parse_headline(line):
     """Parse headline"""
     heading_match = re.match(r"^(#{1,6})\s+(.*)$", line)
     if heading_match:
         level = len(heading_match.group(1))
-        content = heading_match.group(2)
+        # content = heading_match.group(2)
+        content = parse_bold_and_italic(heading_match.group(2))
         return "<h{level}>{content}</h{level}>".format(
             level=level, content=content
         )
@@ -34,7 +47,10 @@ def parse_unordered_list(lines):
     for line in lines:
         unordered_list_match = re.match(r"^\-\s+(.*)$", line)
         if unordered_list_match:
-            content = unordered_list_match.group(1)
+            # content = unordered_list_match.group(1)
+            content = parse_bold_and_italic(
+                unordered_list_match.group(1)
+            )
             list_items.append(f"<li>{content}</li>")
             line_count += 1
         else:
@@ -55,7 +71,10 @@ def parse_ordered_list(lines):
     for line in lines:
         ordered_list_match = re.match(r"^\*\s+(.*)$", line)
         if ordered_list_match:
-            content = ordered_list_match.group(1)
+            # content = ordered_list_match.group(1)
+            content = parse_bold_and_italic(
+                ordered_list_match.group(1)
+            )
             list_items.append(f"<li>{content}</li>")
             line_count += 1
         else:
@@ -77,7 +96,8 @@ def parse_paragraph(lines):
         stripped_line = line.rstrip()
         if stripped_line == "":  # End of paragraph
             break
-        paragraph_lines.append(stripped_line)
+        content = parse_bold_and_italic(line.strip())
+        paragraph_lines.append(content)
         line_count += 1
 
     if paragraph_lines:
@@ -126,7 +146,8 @@ def markdown_to_html(md_lines):
             i += count
             continue
 
-        lines.append(line)
+        # lines.append(line)
+        lines.append(parse_bold_and_italic(line))
         i += 1
 
     return lines
