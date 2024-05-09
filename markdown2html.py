@@ -68,6 +68,26 @@ def parse_ordered_list(lines):
         return None, 0
 
 
+def parse_paragraph(lines):
+    """parse paragraph"""
+    paragraph_lines = []
+    line_count = 0
+
+    for line in lines:
+        stripped_line = line.rstrip()
+        if stripped_line == "":  # End of paragraph
+            break
+        paragraph_lines.append(stripped_line)
+        line_count += 1
+
+    if paragraph_lines:
+        paragraph_content = "<br />\n".join(paragraph_lines)
+        html_paragraph = f"<p>\n{paragraph_content}\n</p>"
+        return html_paragraph, line_count
+    else:
+        return None, 0
+
+
 def markdown_to_html(md_lines):
     """Convert markdown to html"""
     lines = []
@@ -96,6 +116,13 @@ def markdown_to_html(md_lines):
         ordered_list_html, count = parse_ordered_list(md_lines[i:])
         if ordered_list_html:
             lines.append(ordered_list_html)
+            i += count
+            continue
+
+        # parse paragraph
+        paragraph_html, count = parse_paragraph(md_lines[i:])
+        if paragraph_html:
+            lines.append(paragraph_html)
             i += count
             continue
 
