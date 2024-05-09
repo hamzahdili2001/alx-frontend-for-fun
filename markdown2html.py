@@ -47,6 +47,27 @@ def parse_unordered_list(lines):
         return None, 0
 
 
+def parse_ordered_list(lines):
+    """parse ordered lists"""
+    list_items = []
+    line_count = 0
+
+    for line in lines:
+        ordered_list_match = re.match(r"^\*\s+(.*)$", line)
+        if ordered_list_match:
+            content = ordered_list_match.group(1)
+            list_items.append(f"<li>{content}</li>")
+            line_count += 1
+        else:
+            break
+
+    if list_items:
+        html_list = "<ol>\n" + "\n".join(list_items) + "\n</ol>"
+        return html_list, line_count
+    else:
+        return None, 0
+
+
 def markdown_to_html(md_lines):
     """Convert markdown to html"""
     lines = []
@@ -68,6 +89,13 @@ def markdown_to_html(md_lines):
         )
         if unordered_list_html:
             lines.append(unordered_list_html)
+            i += count
+            continue
+
+        # parse ordered list
+        ordered_list_html, count = parse_ordered_list(md_lines[i:])
+        if ordered_list_html:
+            lines.append(ordered_list_html)
             i += count
             continue
 
